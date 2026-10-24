@@ -55,10 +55,9 @@ happened; these entries are the toolkit's own timeline.
 All four entries are graded. Keep every heading below, and fill each
 one in the week it belongs to.
 
-**Unit 5: [one line on the tool work]**
+**Unit 5: Built and evaluated an issue-scout for open-source contribution selection**
 
-[2-4 sentences: what you built (the scout, your strategy), what broke
-or fell short, what changed because of it.]
+I upgraded my issue-select skill into issue-scout, added a personalized fit profile, and created three GitHub search queries for JavaScript, TypeScript, and Python with metadata-based ranking filters. My first scan discovered 300 issues and graded five candidates, while manual grading helped me narrow my choices to Rafter CLI #34 and Kaoto #3527. The process revealed limitations in my search strategy, including a preference for recently updated issues with zero comments, and manual review uncovered issues that already had active pull requests despite being open and unassigned. I documented these findings in `scan-notes.md` and kept my existing rubric unchanged for Unit 5, leaving further scope improvements for Unit 6.
 
 **Unit 6: [one line on the tool work]**
 
