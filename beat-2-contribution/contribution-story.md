@@ -1,4 +1,4 @@
-# Contribution: [Issue Title]
+# Contribution: fix: use consistent error formatting across all commands
 
 Path: `beat-2-contribution/contribution-story.md`
 
@@ -8,10 +8,9 @@ format criteria grade exactly that. Your course repo link is the whole submissio
 files and no evidence uploads are part of Assignment 5.
 
 **Contribution Number:** [1]
-**Student:** [Student name]
-**GitHub Username:** [your GitHub username, exactly as it appears on your profile - no @, no
-profile URL. Your comments upstream are identified by this name.]
-**Issue:** [GitHub issue link]
+**Student:** Jingyi He
+**GitHub Username:** jing2003
+**Issue:** https://github.com/Raftersecurity/rafter-cli/issues/34
 **Pull Request:** [GitHub PR link, once opened]
 
 One repository, built across units 5 to 8, telling the whole story of your real
@@ -79,24 +78,18 @@ drafted, what you did with the draft.]
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs in your own words: how you searched, what your scan
-surfaced, what your scout's verdict said, why this issue fits your
-profile, and what you hope to learn. If your scout's verdict on it
-was reject and you chose it anyway, say so here and say why; choosing
-against your own tool silently is what loses points. Close with an
-honest read of the tool itself: where the scout fell short on a real
-wild search and what you changed or would change, or what convinced
-you it held up. **Record the link to your claim comment in this section too.**
-Not claimed yet? Write `claim pending` and today's date where the link goes,
-and add the link the moment your claim lands.]
+In Unit 5, I upgraded my issue-select skill into issue-scout and used it to search GitHub for contribution opportunities that matched my JavaScript, TypeScript, and Python experience. My first scan discovered 300 unique issues and graded five candidates. After manually reviewing additional issues, I narrowed my choices to Rafter CLI #34 and Kaoto #3527. My scout accepted Rafter CLI #34 because it describes a concrete error-formatting inconsistency and provides a grep command to locate the affected code. I chose this issue because it aligns with my technical background and gives me an opportunity to gain experience working in an unfamiliar open-source codebase, understanding existing conventions, and maintaining consistency between TypeScript and Python implementations.
+
+The selection process also revealed weaknesses in my scout. Its ranking favored recently updated issues with no comments, and some open, unassigned issues already had related pull requests that the initial ranking could not detect. In Unit 6, I replaced the restrictive `newcomer-scope` check with `scope-feasible` and added difficulty classifications. Rafter CLI remained accepted with moderate difficulty, while Kaoto and VueTorrent were classified as ambitious. Rafter CLI remained my preferred choice because its starting point is clearer, although the number of affected files and the dual-implementation requirement make it more challenging than a simple replacement. I documented the scout's limitations and verified that the upstream issue was available before posting my claim.
+
+**Claim comment:** https://github.com/Raftersecurity/rafter-cli/issues/34#issuecomment-6436006358
 
 **Toolkit**
 
-- Tool: issue-scout (your scout: your search strategy, your rubric),
-  and how you used it
-- What it produced: [the scan and its verdict on this issue, described]
-- Difficulties: [where it fell short, or "none met" if none did]
-- What changed: [what you patched or would update, or "nothing"]
+- **Tool:** issue-scout, using my personalized fit profile, GitHub search strategy, and grading rubric to discover and evaluate contribution candidates.
+- **What it produced:** A scan of 300 unique issues, five initial candidate evaluations, and additional manual grading. Rafter CLI #34 was accepted under both the original and updated rubrics.
+- **Difficulties:** The initial ranking favored recently updated, zero-comment issues and could not reliably detect competing pull requests from search metadata alone. The original scope check was also too restrictive toward issues with unresolved design questions.
+- **What changed:** I documented these limitations in `scan-notes.md`, replaced `newcomer-scope` with `scope-feasible`, added difficulty notes, and regraded my shortlisted issues before finalizing my selection.
 
 ---
 
