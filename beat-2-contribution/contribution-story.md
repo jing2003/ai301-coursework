@@ -58,11 +58,9 @@ one in the week it belongs to.
 
 I upgraded my issue-select skill into issue-scout, added a personalized fit profile, and created three GitHub search queries for JavaScript, TypeScript, and Python with metadata-based ranking filters. My first scan discovered 300 issues and graded five candidates, while manual grading helped me narrow my choices to Rafter CLI #34 and Kaoto #3527. The process revealed limitations in my search strategy, including a preference for recently updated issues with zero comments, and manual review uncovered issues that already had active pull requests despite being open and unassigned. I documented these findings in `scan-notes.md` and kept my existing rubric unchanged for Unit 5, leaving further scope improvements for Unit 6.
 
-**Unit 6: [one line on the tool work]**
+**Unit 6: Installed a voice guard and created local repository memory for upstream contributions**
 
-[2-4 sentences: the voice-guard, the repo-memory file. What broke or
-fell short, and what changed because of it. "Nothing broke" counts when
-it is true - say how you know.]
+I consolidated my skills' voice guides into one canonical file, installed a Claude Code voice guard, and verified that it blocked a command without a readable comment body while approving my actual GitHub claim for Rafter CLI #34. On Windows, creating symbolic links through Git Bash did not work as expected, so I replaced the individual voice guides with pointers to the canonical guide and configured Claude Code to use the guarded Bash tool instead of PowerShell. I also created a Git-ignored `CLAUDE.local.md` in my Rafter CLI clone and used a scoped, read-only investigation to document the relevant error-formatting utilities, tests, and contribution conventions. The investigation revealed that `fmt.error()` returns formatted text rather than printing it, showing why the issue requires more careful changes than a direct search-and-replace.
 
 **Unit 7: [one line on the tool work]**
 
