@@ -95,26 +95,31 @@ The selection process also revealed weaknesses in my scout. Its ranking favored 
 
 **Problem Description**
 
-[In your own words, what is broken or missing?]
+Rafter CLI has a shared error formatter, but some commands bypass it and print errors directly to stderr. Agents and scripts therefore cannot rely on one error shape. Issue #34 asks for Node.js commands to use `fmt.error()` instead of raw `console.error()` and for the Python equivalents to be checked for consistency. The formatter returns a string rather than printing it, so the fix is `console.error(fmt.error(...))`, not a plain search-and-replace.
 
 **Expected Behavior**
 
-[What should happen?]
+A command that reports a failure should send it to stderr through the shared formatter. In agent mode (`-a` or `--agent`), the message should read `[ERROR] <message>`. In human mode, it should read as a red `✗ <message>`. Both runtimes should produce the same shape for the same failure, and the exit codes from `shared-docs/CLI_SPEC.md` should not change. Progress lines and other non-error uses of `console.error()` are out of scope.
 
 **Current Behavior**
 
-[What actually happens?]
+At the pre-fix baseline, commit `45b5fc1` (release v0.11.3), the backend commands print errors without the formatter. In Node.js, `node/src/commands/backend/get.ts` prints `Scan '<id>' not found` with no prefix for a 404 response, prints `e.message` for other errors, and passes `e.response.data` directly to `console.error()`, so a JSON error body appears as a raw object. `run.ts` and `usage.ts` follow the same pattern. In Python, `python/rafter_cli/commands/backend.py` prints some errors as plain text, such as `Scan '<id>' not found` and `Quota exhausted`, and others with an `Error: ` prefix, such as `Error: {e}` and `Error: {resp.text}`. Neither runtime emits `[ERROR]` on these paths in agent mode, and the two runtimes do not match each other. Other commands, including `agent audit-skill`, `agent enable`, and `agent disable`, already use `console.error(fmt.error(...))`. I verified this behavior by reading the source code; I have not yet observed it by running the CLI (see Reproduction Process).
 
 **Affected Components**
 
-[Which parts of the codebase are involved?]
+- `node/src/utils/formatter.ts`: `fmt.error()` returns `[ERROR] <text>` in agent mode and `chalk.red("✗ <text>")` otherwise. `node/src/index.ts` enables agent mode from `-a` or `--agent` before Commander parses the arguments.
+- `python/rafter_cli/utils/formatter.py`: `fmt.error()` returns `[ERROR] <text>` or Rich markup (`[red]✗ <text>[/red]`), and `print_stderr()` renders the markup. Server text that contains brackets must be escaped before Rich renders it.
+- Backend commands, the first target named in the issue: `node/src/commands/backend/get.ts`, `run.ts`, `usage.ts`, and the shared HTTP helper `describeHttpError()` in `scan-status.ts`, along with `python/rafter_cli/commands/backend.py`.
+- Wider scope: 34 files under `node/src/commands/` still call `console.error()`. These are review candidates, not confirmed defects. Many of them print progress or status lines rather than errors, and some already wrap `fmt.error()`, so each call needs to be reviewed individually.
+- Contract: `shared-docs/CLI_SPEC.md` requires status messages on stderr and plain agent-mode output, but before this work it did not specify an error prefix.
+- Tests: `node/tests/formatter.test.ts`, `node/tests/formatter-commands.test.ts`, `python/tests/test_formatter.py`, and `python/tests/test_error_handling_gauntlet.py`.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: Claude Code in a read-only orientation session guided by my Git-ignored `CLAUDE.local.md` repository memory. I used it to read the issue, the two formatters, the backend commands in both runtimes, and the spec, and later to compare the source before and after my change with `git show`.
+- What it produced: A file-by-file map of where errors bypass the formatter, confirmation that `fmt.error()` returns a string rather than printing one, and the Node.js and Python error shapes listed above.
+- Difficulties: The issue's `grep` command returns many `console.error()` calls that do not report errors, so its match count overstates the work. Python's Rich markup adds an escaping problem that Node.js does not have. The spec defined no error prefix that I could test against.
+- What changed: I limited the first pass to the backend commands named in the issue instead of replacing every `console.error()` call. I recorded the cautions about progress lines and duplicate `Error:` prefixes in `CLAUDE.local.md`, and I treated the missing spec wording as something my change has to add.
 
 ---
 
@@ -122,31 +127,43 @@ The selection process also revealed weaknesses in my scout. Its ranking favored 
 
 **Environment Setup**
 
-[What a stranger would need to stand this up: your operating system,
-the relevant versions (language, runtime, package manager, the project
-itself), and how you set the project up. Then the challenges you faced
-and how you solved them, or that none came up.]
+- Host: Windows 11, with my clone of `Raftersecurity/rafter-cli` on the branch `fix/34-consistent-error-formatting`. I run the project in isolated Docker containers, not on the host.
+- Node.js: local image `ai301-rafter34-node-pnpm10-git` with Node.js 24.22.2, pnpm 10.34.9, and Git 2.39.5. Dependencies live in the Docker volume `ai301-rafter34-work`, which holds the pnpm store at `/work/.pnpm-store` and the installed packages at `/work/node_modules/.pnpm`.
+- Python: image `python:3.12-slim-bookworm`.
+- Commits: the pre-fix baseline is `45b5fc1` (release v0.11.3), and the fix is `34f3b8c`. `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `node/package.json`, `node/tsconfig.json`, and `node/src/utils/` are identical in the two commits, so the baseline needs no dependencies beyond those already installed for the fix.
+- Setup challenges for the pre-fix runtime reproduction: pending, because it has not been run.
 
 **Steps to Reproduce**
 
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
+*Completed: source inspection of the baseline (not a runtime reproduction)*
+
+1. I read the pre-fix Node.js error path with `git show 45b5fc1:node/src/commands/backend/get.ts`. On a 404 response, it calls ``console.error(`Scan '${scan_id}' not found`)`` without `fmt.error()` and then exits with `EXIT_SCAN_NOT_FOUND` (2).
+2. I read the pre-fix Python error path in `python/rafter_cli/commands/backend.py` at the same commit. It prints `Scan '<id>' not found` as plain text and prints other errors with an `Error: ` prefix.
+3. I compared both paths with `fmt.error()` in each runtime, which returns `[ERROR] <text>` in agent mode.
+
+*Completed: post-fix regression tests (not a reproduction)*
+
+The selected tests passed in Docker after the fix: 105 Node.js tests passed, and 158 Python tests passed with 1 skipped. These results show that the new formatting works, but not that the old code was broken. The new tests cannot run unchanged against the baseline, because `node/tests/backend-get-errors.test.ts` imports `describeHttpError`, which `scan-status.ts` does not export at `45b5fc1`.
+
+*Pending: pre-fix runtime reproduction (proposed, not run)*
+
+1. In a Docker container with networking disabled, check out `45b5fc1` in a temporary clone, install dependencies offline from a copy of the pnpm store in `ai301-rafter34-work`, and build `node/`.
+2. Start a local stub server on `127.0.0.1` that answers every request with HTTP 404, and point `RAFTER_API_URL` at it.
+3. Run `rafter -a get does-not-exist`, and capture the CLI's stdout, stderr, and exit code and the stub's request log in separate files.
+4. If the bug is present, stderr is `Scan 'does-not-exist' not found` without an `[ERROR] ` prefix, and the exit code is 2. Observed result: pending.
 
 **Reproduction Evidence**
 
-- **Commit showing reproduction:** [link to commit in your fork]
-- **Screenshots/logs:** [if applicable]
-- **My findings:** [what you discovered during reproduction; an
-  honest, evidenced cannot-reproduce that led you to re-pick or ask
-  the maintainer belongs here and costs you nothing]
+- **Commit showing reproduction:** Pending. `34f3b8c` is the fix commit, not a reproduction.
+- **Screenshots/logs:** Pending. No pre-fix runtime output has been captured.
+- **My findings:** Reading the source at `45b5fc1` establishes the inconsistency: in Node.js, the backend `get`, `run`, and `usage` error paths bypass `fmt.error()`, and in Python, the backend errors mix plain text with `Error: ` prefixes. The post-fix test runs confirm the new formatting. A pre-fix runtime reproduction has not been captured yet.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: Claude Code for read-only source inspection with `git show` at the baseline commit and for reading Docker image and volume metadata, plus isolated Docker containers for the post-fix test runs.
+- What it produced: A source-level account of the pre-fix error paths in both runtimes, post-fix results of 105 Node.js passes and 158 Python passes with 1 skip, and a proposed pre-fix reproduction against a local stub with networking disabled.
+- Difficulties: The new regression tests depend on an export that does not exist at the baseline, so they cannot show the original bug. The post-fix runs produced no pre-fix runtime output.
+- What changed: Instead of adapting the new tests to the old code, I planned a reproduction that runs the unmodified baseline CLI against a local 404 stub, with no external network and no changes to the existing Docker volume.
 
 ---
 
