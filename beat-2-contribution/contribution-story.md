@@ -66,10 +66,9 @@ I consolidated my skills' voice guides into one canonical file, installed a Clau
 
 I installed a Claude Code ship-gate and created a `ship-manifest.md` that runs the repository's full Node.js and Python test suites before reviewing my pull request with `pr-precheck`. Initial tests failed because Docker ran as root, which affected unreadable-file tests, so I adjusted the execution users and verified that both full suites passed. The precheck also exposed outdated test evidence and a mismatch in recorded execution times, prompting me to improve the documentation and remove unreliable timing comparisons without changing the implementation or weakening the rubric. After these corrections, all six precheck criteria passed, and I successfully opened [PR #341](https://github.com/Raftersecurity/rafter-cli/pull/341) for Rafter CLI issue #34.
 
-**Unit 8: [one line on the tool work]**
+**Unit 8: Installed and used a PR-monitor with a maintainer-response playbook**
 
-[2-4 sentences: the PR-monitor and your playbook. What it read, what it
-drafted, what you did with the draft.]
+I installed CodePath's PR-monitor and wrote a four-part playbook defining how to respond to reviews, when to consider a follow-up, how to communicate politely, and when to consider withdrawing a contribution. On November 6, I ran both the state-only check and the full monitor against PR #341, which reported six days without a maintainer response, no comments or reviews, and no checks reported. The monitor used its polite-nudge form but produced a wait note instead of a message to post because my 14-day follow-up threshold had not been reached. I reviewed the draft and monitoring log, decided not to contact the maintainer, and kept the PR open for future review.
 
 ---
 
@@ -155,12 +154,12 @@ I ran this after the fix and PR, not before implementation, so it confirms the o
 
 Observed results (the fixture logged a real request from each run):
 
-| | Baseline `45b5fc1` | Fix `34f3b8c` |
-|---|---|---|
-| stderr | `Scan 'does-not-exist' not found` | `[ERROR] Scan 'does-not-exist' not found` |
-| stdout | empty | empty |
-| exit code | 2 | 2 |
-| signal | none | none |
+|           | Baseline `45b5fc1`                | Fix `34f3b8c`                             |
+| --------- | --------------------------------- | ----------------------------------------- |
+| stderr    | `Scan 'does-not-exist' not found` | `[ERROR] Scan 'does-not-exist' not found` |
+| stdout    | empty                             | empty                                     |
+| exit code | 2                                 | 2                                         |
+| signal    | none                              | none                                      |
 
 The baseline prints the 404 error without the `[ERROR] ` prefix in agent mode, and the fix adds the prefix without changing the exit code.
 
