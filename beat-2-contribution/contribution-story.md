@@ -102,7 +102,7 @@ A command that reports a failure should send it to stderr through the shared for
 
 **Current Behavior**
 
-At the pre-fix baseline, commit `45b5fc1` (release v0.11.3), the backend commands print errors without the formatter. In Node.js, `node/src/commands/backend/get.ts` prints `Scan '<id>' not found` with no prefix for a 404 response, prints `e.message` for other errors, and passes `e.response.data` directly to `console.error()`, so a JSON error body appears as a raw object. `run.ts` and `usage.ts` follow the same pattern. In Python, `python/rafter_cli/commands/backend.py` prints some errors as plain text, such as `Scan '<id>' not found` and `Quota exhausted`, and others with an `Error: ` prefix, such as `Error: {e}` and `Error: {resp.text}`. Neither runtime emits `[ERROR]` on these paths in agent mode, and the two runtimes do not match each other. Other commands, including `agent audit-skill`, `agent enable`, and `agent disable`, already use `console.error(fmt.error(...))`. I verified this behavior by reading the source code; I have not yet observed it by running the CLI (see Reproduction Process).
+At the pre-fix baseline, commit `45b5fc1` (release v0.11.3), the backend commands print errors without the formatter. In Node.js, `node/src/commands/backend/get.ts` prints `Scan '<id>' not found` with no prefix for a 404 response, prints `e.message` for other errors, and passes `e.response.data` directly to `console.error()`, so a JSON error body appears as a raw object. `run.ts` and `usage.ts` follow the same pattern. In Python, `python/rafter_cli/commands/backend.py` prints some errors as plain text, such as `Scan '<id>' not found` and `Quota exhausted`, and others with an `Error: ` prefix, such as `Error: {e}` and `Error: {resp.text}`. Neither runtime emits `[ERROR]` on these paths in agent mode, and the two runtimes do not match each other. Other commands, including `agent audit-skill`, `agent enable`, and `agent disable`, already use `console.error(fmt.error(...))`. I first identified this behavior by reading the source code. On November 6, 2026, after the fix and PR were already in place, I confirmed the Node.js backend `get` 404 path at runtime by running the unmodified baseline CLI against a local fixture (see Reproduction Process). The other backend commands and the Python paths are still supported by source inspection only.
 
 **Affected Components**
 
@@ -130,7 +130,7 @@ At the pre-fix baseline, commit `45b5fc1` (release v0.11.3), the backend command
 - Node.js: local image `ai301-rafter34-node-pnpm10-git` with Node.js 24.22.2, pnpm 10.34.9, and Git 2.39.5. Dependencies live in the Docker volume `ai301-rafter34-work`, which holds the pnpm store at `/work/.pnpm-store` and the installed packages at `/work/node_modules/.pnpm`. This volume supported my earlier experiments; the final successful ship-gate checks used fresh installations in disposable containers.
 - Python: image `python:3.12-slim-bookworm`.
 - Commits: the pre-fix baseline is `45b5fc1` (release v0.11.3), and the fix is `34f3b8c`. `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `node/package.json`, `node/tsconfig.json`, and `node/src/utils/` are identical in the two commits, so the baseline needs no dependencies beyond those already installed for the fix.
-- Setup challenges for the pre-fix runtime reproduction: pending, because it has not been run.
+- Setup challenges for the pre-fix runtime reproduction: the CLI took about 45 seconds to start in the container, so my first run was terminated by a 15-second timeout; raising the timeout to 120 seconds fixed it. Installing from the pnpm store in `ai301-rafter34-work` failed with a read-only store error, so I installed from an isolated writable copy of the store and left the original volume unchanged.
 
 **Steps to Reproduce**
 
@@ -144,25 +144,38 @@ _Completed: post-fix regression tests (not a reproduction)_
 
 The selected tests passed in Docker after the fix: 105 Node.js tests passed, and 158 Python tests passed with 1 skipped. These results show that the new formatting works, but not that the old code was broken. The new tests cannot run unchanged against the baseline, because `node/tests/backend-get-errors.test.ts` imports `describeHttpError`, which `scan-status.ts` does not export at `45b5fc1`.
 
-_Pending: pre-fix runtime reproduction (proposed, not run)_
+_Completed November 6, 2026: retrospective runtime reproduction of the Node.js backend `get` 404 path_
 
-1. In a Docker container with networking disabled, check out `45b5fc1` in a temporary clone, install dependencies offline from a copy of the pnpm store in `ai301-rafter34-work`, and build `node/`.
-2. Start a local stub server on `127.0.0.1` that answers every request with HTTP 404, and point `RAFTER_API_URL` at it.
-3. Run `rafter -a get does-not-exist`, and capture the CLI's stdout, stderr, and exit code and the stub's request log in separate files.
-4. If the bug is present, stderr is `Scan 'does-not-exist' not found` without an `[ERROR] ` prefix, and the exit code is 2. Observed result: pending.
+I ran this after the fix and PR, not before implementation, so it confirms the original behavior after the fact rather than guiding the fix.
+
+1. I exported snapshots of the baseline `45b5fc1` and the fix `34f3b8c` with `git archive`.
+2. I built each Node.js CLI in its own isolated Docker container, installing dependencies offline from a writable copy of the pnpm store.
+3. For each run, I started a separate local server instance from the same Node.js HTTP 404 fixture script, which answers `GET /api/static/scan?scan_id=does-not-exist&format=md` with HTTP 404, and pointed the CLI at it with a dummy API key. External networking was disabled in Docker.
+4. For each snapshot, I ran `node /repro/<baseline-or-fix>/node/dist/index.js -a get does-not-exist --quiet` and captured stdout, stderr, exit code, termination signal, and the fixture's request log.
+
+Observed results (the fixture logged a real request from each run):
+
+| | Baseline `45b5fc1` | Fix `34f3b8c` |
+|---|---|---|
+| stderr | `Scan 'does-not-exist' not found` | `[ERROR] Scan 'does-not-exist' not found` |
+| stdout | empty | empty |
+| exit code | 2 | 2 |
+| signal | none | none |
+
+The baseline prints the 404 error without the `[ERROR] ` prefix in agent mode, and the fix adds the prefix without changing the exit code.
 
 **Reproduction Evidence**
 
-- **Commit showing reproduction:** Pending. `34f3b8c` is the fix commit, not a reproduction.
-- **Screenshots/logs:** Pending. No pre-fix runtime output has been captured.
-- **My findings:** Reading the source at `45b5fc1` establishes the inconsistency: in Node.js, the backend `get`, `run`, and `usage` error paths bypass `fmt.error()`, and in Python, the backend errors mix plain text with `Error: ` prefixes. The post-fix test runs confirm the new formatting. A pre-fix runtime reproduction has not been captured yet.
+- **Commit showing reproduction:** No separate reproduction commit exists. The reproduction ran unmodified `git archive` snapshots of the baseline `45b5fc1` and the fix `34f3b8c`.
+- **Screenshots/logs:** Logs and JSON results are saved locally under `~/codepath/rafter34-repro.mWc7bj/evidence/`. They have not been published to GitHub.
+- **My findings:** Reading the source at `45b5fc1` establishes the inconsistency: in Node.js, the backend `get`, `run`, and `usage` error paths bypass `fmt.error()`, and in Python, the backend errors mix plain text with `Error: ` prefixes. The runtime reproduction confirms the Node.js `get` 404 path specifically: the baseline omits `[ERROR] `, and the fix adds it with the same exit code 2. I did not manually reproduce `run`, `usage`, other `get` error paths, or the Python CLI; those rely on source inspection and the post-fix regression tests.
 
 **Toolkit**
 
-- Tool: Claude Code for read-only source inspection with `git show` at the baseline commit and for reading Docker image and volume metadata, plus isolated Docker containers for the post-fix test runs.
-- What it produced: A source-level account of the pre-fix error paths in both runtimes, post-fix results of 105 Node.js passes and 158 Python passes with 1 skip, and a proposed pre-fix reproduction against a local stub with networking disabled.
-- Difficulties: The new regression tests depend on an export that does not exist at the baseline, so they cannot show the original bug. The post-fix runs produced no pre-fix runtime output.
-- What changed: Instead of adapting the new tests to the old code, I planned a reproduction that runs the unmodified baseline CLI against a local 404 stub, with no external network and no changes to the existing Docker volume.
+- Tool: Claude Code for read-only source inspection with `git show` at the baseline commit and for reading Docker image and volume metadata, isolated Docker containers for the post-fix test runs, and, on November 6, `git archive` snapshots, offline Docker builds, and a reusable local Node.js HTTP 404 fixture script for the retrospective runtime reproduction.
+- What it produced: A source-level account of the pre-fix error paths in both runtimes, post-fix results of 105 Node.js passes and 158 Python passes with 1 skip, and a before/after runtime comparison of the Node.js `get` 404 path: `Scan 'does-not-exist' not found` at `45b5fc1` versus `[ERROR] Scan 'does-not-exist' not found` at `34f3b8c`, both with exit code 2.
+- Difficulties: The new regression tests depend on an export that does not exist at the baseline, so they cannot show the original bug. During the reproduction, my first run was killed by a 15-second timeout because the CLI took about 45 seconds to start, and installing from the existing pnpm store failed with a read-only store error.
+- What changed: Instead of adapting the new tests to the old code, I ran the unmodified baseline and fixed CLIs, each against its own server instance started from the same local 404 fixture script, with external networking disabled and a dummy API key. I raised the timeout to 120 seconds and installed from an isolated writable copy of the pnpm store, which left the original Docker volume unchanged.
 
 ---
 
@@ -210,20 +223,20 @@ For full-suite validation, I used Docker containers running the committed implem
 
 The initial Docker checks encountered permission-related failures. Two Node.js tests and five Python tests involving unreadable files failed when executed as root but passed as non-root users. I updated the ship manifest to execute Node.js tests as UID 1000 and Python tests as `nobody`. Both full suites subsequently passed, and the ship-gate accepted all six PR readiness checks.
 
-**Evidence limitations:** I identified the pre-fix behavior through source inspection at commit `45b5fc1`, but did not capture a pre-fix runtime reproduction or manual before-and-after CLI output. The new regression tests verify the corrected behavior, while the full test suites provide broader validation. The gate recorded successful checks and their commands, but complete test logs were not retained. Earlier full-suite failures from different environments were documented separately rather than assumed to be unrelated to the change.
+**Evidence limitations:** During development and PR validation, I identified the pre-fix behavior through source inspection at commit `45b5fc1` only; the regression tests and full-suite runs above were never run against the baseline, so they do not show that the original code failed. On November 6, 2026, after the PR was opened, I added a retrospective runtime reproduction that compares the baseline and fixed CLIs on the Node.js backend `get` 404 path (see Reproduction Process). It covers that one path; the other backend commands and the Python CLI have not been manually reproduced, and its logs are saved locally rather than published. The new regression tests verify the corrected behavior, while the full test suites provide broader validation. The gate recorded successful checks and their commands, but complete test logs were not retained. Earlier full-suite failures from different environments were documented separately rather than assumed to be unrelated to the change.
 
 **Toolkit**
 
 - **Tool:** Docker-based testing, `ship-manifest.md`, Claude Code ship-gate, and `pr-precheck`.
 - **What it produced:** Successful full Node.js and Python test checks on commit `34f3b8c`, documented test evidence, and an accepted PR readiness review.
 - **Difficulties:** Docker's root user caused unreadable-file tests to fail, while early runs used different environments that made results difficult to compare. The precheck also rejected outdated evidence and exact execution-time comparisons.
-- **What changed:** I configured the tests to run as non-root users, distinguished historical results from current validation, and removed unstable timing claims from the PR documentation. I retained the missing pre-fix runtime reproduction as an explicitly disclosed limitation instead of inventing evidence or weakening the review criteria.
+- **What changed:** I configured the tests to run as non-root users, distinguished historical results from current validation, and removed unstable timing claims from the PR documentation. When I submitted the original PR, the missing pre-fix runtime reproduction was an explicitly disclosed limitation, and I kept it that way instead of inventing evidence or weakening the review criteria. The retrospective November 6 reproduction later addressed that gap for the Node.js backend `get` 404 path only. The regression tests were still never shown failing before implementation.
 
 ---
 
 ## Implementation Notes
 
-_These notes were reconstructed from my development and testing history rather than recorded in real time._
+_The October 29–30 entries were reconstructed from my development and testing history rather than recorded in real time. The November 6 entry was documented on the day of the reproduction._
 
 **October 29, 2026 — Implementing consistent error formatting**
 
@@ -242,6 +255,10 @@ I eventually identified a Docker permission problem: the unreadable-file tests f
 The `pr-precheck` initially rejected my submission because the PR description contained outdated test results and execution durations that differed between runs. I corrected the documentation, separated historical failures from current evidence, and removed unstable timing comparisons. After these changes, all six readiness checks passed.
 
 I opened [PR #341](https://github.com/Raftersecurity/rafter-cli/pull/341) against the upstream repository and posted a progress update on issue #34. The PR is open for maintainer review; it has not been merged.
+
+**November 6, 2026 — Retrospective runtime reproduction**
+
+I ran the baseline `45b5fc1` and the fix `34f3b8c` side by side to add runtime evidence for the Node.js backend `get` 404 path alongside my earlier source inspection. I exported both commits with `git archive`, built each CLI offline in an isolated Docker container, and ran `-a get does-not-exist --quiet` against a separate local server instance per run, each started from the same HTTP 404 fixture script, with external networking disabled and a dummy API key. The baseline printed `Scan 'does-not-exist' not found`, and the fix printed `[ERROR] Scan 'does-not-exist' not found`; both had empty stdout and exit code 2. My first attempt timed out after 15 seconds because the CLI took about 45 seconds to start, so I raised the timeout to 120 seconds. A read-only pnpm store error led me to install from an isolated writable copy, leaving the original volume unchanged. I saved the logs locally and have not yet published them.
 
 **Toolkit**
 
