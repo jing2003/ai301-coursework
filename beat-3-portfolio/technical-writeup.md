@@ -2,7 +2,7 @@
 
 ## Overview
 
-Rafter CLI provides security tools that developers and AI agents can use through a command-line interface. Consistent error formatting matters because predictable error messages help scripts and AI agents parse errors reliably. The backend commands handled errors inconsistently across Node.js and Python. Some commands printed raw error messages instead of passing them through the shared formatter. I standardized error formatting for the `run`, `get`, and `usage` backend commands in both implementations. I also added regression tests and updated the CLI specification. Both full test suites passed in separate isolated Docker containers. After the maintainer reviewed my contribution, I addressed the feedback by updating Node.js so quiet mode reports quota errors consistently with Python. [PR #341](https://github.com/Raftersecurity/rafter-cli/pull/341) remains open and is awaiting further review.
+Rafter CLI provides security tools that developers and AI agents can use through a command-line interface. Consistent error formatting matters because predictable error messages help scripts and AI agents parse errors reliably. The backend commands handled errors inconsistently across Node.js and Python. Some commands printed raw error messages instead of passing them through the shared formatter. I standardized error formatting for the `run`, `get`, and `usage` backend commands in both implementations. I also added regression tests and updated the CLI specification. Both full test suites passed in separate isolated Docker containers. After the maintainer reviewed my contribution, I addressed the feedback by updating Node.js so quiet mode reports quota errors consistently with Python. [PR #341](https://github.com/Raftersecurity/rafter-cli/pull/341) was successfully merged into upstream `main` on November 14, 2026, after I addressed the maintainer's feedback.
 
 ## What happened
 
@@ -48,10 +48,20 @@ expect(exitCode).toBe(EXIT_QUOTA_EXHAUSTED);
 expect(lines).toEqual(["[ERROR] Quota exhausted"]);
 ```
 
-After addressing the feedback, I reran both full test suites in Docker and reported 2,487 passing Node.js tests and 2,066 passing Python tests, plus 231 passing Python subtests. I pushed the updates and replied to the maintainer. The PR remains open for another review.
+After addressing the feedback, I reran both full test suites in Docker and reported 2,487 passing Node.js tests and 2,066 passing Python tests, plus 231 passing Python subtests. I pushed the updates and replied to the maintainer. At the time of submission, the PR was still awaiting further review.
+
+### Merge outcome — November 14
+
+On November 14, 2026, my [PR #341](https://github.com/Raftersecurity/rafter-cli/pull/341) was successfully merged into Rafter CLI's upstream `main` branch after I completed Assignment 6.
+
+The merged contribution standardizes error formatting in the Node.js and Python backend commands, adds regression tests, and updates the CLI specification.
+
+The original [issue #34](https://github.com/Raftersecurity/rafter-cli/issues/34) remains open because my pull request addresses only the backend commands, not every command covered by the broader issue.
+
+This completed my first merged contribution to Rafter CLI and gave me experience working through maintainer feedback, revising my implementation, and validating the changes before merging.
 
 ## Limitations and what's next
 
-My contribution covers the `run`, `get`, and `usage` backend commands, not every command in issue #34. Other error and status messages would need to be investigated individually before changing them, and my PR has not yet been merged.
+My contribution covers the `run`, `get`, and `usage` backend commands, not every command in issue #34. Other error and status messages would need to be investigated individually before changing them.
 
 If I continued working on Rafter CLI after this assignment, I would improve how I start the next issue. I would verify that my development environment is properly configured and run the existing test suites before making any code changes. I would approach environment issues more systematically and avoid repeatedly troubleshooting the same problem without identifying its root cause. Looking back, I realized that I made more changes than I initially expected for this issue, so I would focus on smaller, more targeted changes in future contributions.

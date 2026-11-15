@@ -7,3 +7,13 @@ I learned that contributing to open source is not just about writing code. It al
 My pull request is still open and awaiting further review.
 
 https://github.com/Raftersecurity/rafter-cli/pull/341
+
+---
+
+**Update — November 14, 2026**
+
+After completing Assignment 6, my pull request was successfully
+merged into Rafter CLI's upstream `main` branch.
+
+The original issue #34 remains open because my contribution
+addresses only the backend commands, not the entire issue.
