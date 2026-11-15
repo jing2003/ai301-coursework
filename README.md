@@ -1,29 +1,47 @@
-# ai301-coursework
+# CodePath AI301 — Open-Source AI Engineering
 
-This is your one repository for the whole course. You create it in unit 1
-from the course template, and its link is the whole submission at every
-check-in; graders open the folder for that unit's work.
+This repository documents my coursework and learning experience in **CodePath AI301**, where I developed AI-assisted engineering workflows and applied them to real open-source contributions.
 
-## What lives where
+Throughout the course, I practiced evaluating GitHub issues, reproducing bugs, planning implementations, testing changes, reviewing pull requests, and collaborating with project maintainers.
 
-- `tools/`: your installed skill folders, one per unit in Beat 1. Unit 1
-  is `issue-select/`, unit 2 `repro-check/`, unit 3 `plan-check/`, unit 4
-  `pr-precheck/`. Upload the current files from your installed copy
-  (`~/.claude/skills/<skill>/`) when you submit.
-- `beat-1-sandbox/`: one folder per unit for units 1-4. Each holds that
-  unit's write-up (its links, a short reflection, and your account of the
-  eval iterations behind the run) and `eval-run.txt`, one complete eval
-  run written by the harness itself with `--save-run`. Unit 3's folder
-  also holds your `plan.md`.
-- `beat-2-contribution/`: `contribution-story.md` is Assignment 5, the
-  graded story of your real contribution, built across units 5-8 and
-  submitted once. A second contribution is welcome and never graded: copy
-  `extra-round-template.md` to `contribution-story-2.md`.
-- `beat-3-portfolio/`: `toolkit-portfolio.md` is Assignment 6, the unit-9
-  toolkit portfolio. It is the skeleton you fill in unit 9; until then it
-  waits.
+## Highlights
 
-In units 1-4 everything you upload goes to two places: `tools/` for that
-unit's skill folder, and `beat-1-sandbox/unit-N/` for its write-up and
-eval run. Beats 2 and 3 are one file each, and you submit the same repo
-link every unit.
+- **Open-source contribution:** Contributed to [Rafter CLI](https://github.com/Raftersecurity/rafter-cli) through [PR #341](https://github.com/Raftersecurity/rafter-cli/pull/341), merged into upstream `main` on November 14, 2026.
+- **Implementation:** Standardized error formatting in Node.js and Python backend commands (`run`, `get`, and `usage`), added regression tests, and updated the CLI specification.
+- **Testing and validation:** Used isolated Docker environments to verify changes and investigate environment-related testing failures.
+- **Maintainer collaboration:** Responded to code review feedback, revised the implementation, and revalidated the changes before merging.
+- **AI-assisted workflows:** Developed and customized tools for issue evaluation, reproduction checks, implementation planning, and PR readiness.
+
+PR #341 addresses the backend-command portion of [Rafter CLI issue #34](https://github.com/Raftersecurity/rafter-cli/issues/34). The broader issue remains open.
+
+## Repository Structure
+
+| Directory                                      | Contents                                                                                                          |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [`beat-1-sandbox/`](beat-1-sandbox/)           | Units 1–4: issue selection, reproduction, planning, implementation, PR preparation, and saved evaluation results. |
+| [`beat-2-contribution/`](beat-2-contribution/) | Assignment 5: detailed open-source contribution history, testing evidence, challenges, and reflections.           |
+| [`beat-3-portfolio/`](beat-3-portfolio/)       | Assignment 6: technical write-up, LinkedIn post content, and retained course materials.                           |
+| [`tools/`](tools/)                             | Four rubric-driven AI skill implementations developed and evaluated during Units 1–4.                             |
+
+## AI-Assisted Engineering Tools
+
+The repository includes four skill implementations:
+
+| Tool                                          | Purpose                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [`issue-select`](tools/issue-select/SKILL.md) | Evaluate open-source issues against a structured rubric.                                      |
+| [`repro-check`](tools/repro-check/SKILL.md)   | Assess the quality and readiness of bug reproduction evidence.                                |
+| [`plan-check`](tools/plan-check/SKILL.md)     | Evaluate implementation plans for feasibility, scope, and supporting evidence.                |
+| [`pr-precheck`](tools/pr-precheck/SKILL.md)   | Review pull requests for implementation fidelity, testing evidence, and submission readiness. |
+
+Later course work also involved issue-scout, voice-guard, ship-gate, and PR-monitor workflows. Their development and application are documented in the [contribution story](beat-2-contribution/contribution-story.md).
+
+## Open-Source Contribution and Portfolio
+
+- [Rafter CLI PR #341 — Merged contribution](https://github.com/Raftersecurity/rafter-cli/pull/341)
+- [Rafter CLI issue #34 — Original issue](https://github.com/Raftersecurity/rafter-cli/issues/34)
+- [Contribution story](beat-2-contribution/contribution-story.md)
+- [Technical write-up](beat-3-portfolio/technical-writeup.md)
+- [LinkedIn post content](beat-3-portfolio/linkedin-post.md)
+
+The coursework documents preserve the work, evidence, and project status recorded during the original assignments. For the latest contribution status, refer to the upstream GitHub pull request.
